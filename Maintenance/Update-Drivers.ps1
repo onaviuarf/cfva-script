@@ -16,7 +16,7 @@ Scarica da Windows Update.
 
 .NOTES
 Author: Ivano Frau - CFVA
-Version: 1.0
+Version: 1.1
 Requires: Administrator privileges
 Requires: Internet connection
 #>
@@ -32,24 +32,21 @@ Write-Host "========================================" -ForegroundColor Yellow
 
 Write-Host "`nRicerca aggiornamenti driver..." -ForegroundColor Cyan
 
-# Usa Windows Update per aggiornare driver
-$ProgressPreference = 'SilentlyContinue'
-
 try {
-    # Avvia Windows Update
-    Write-Host "`n[1/2] Avvio ricerca aggiornamenti Windows Update..." -ForegroundColor Cyan
-    Start-Process -FilePath "ms-settings:windowsupdate" -Wait -NoNewWindow
-    Write-Host "  ✓ Apri Impostazioni > Aggiornamenti Windows" -ForegroundColor Green
+    Write-Host "`n[1/2] Driver installati:" -ForegroundColor Cyan
+    Get-PnpDevice -Status OK | Select-Object Name, Description | Format-Table -AutoSize
     
-    # Info driver attuali
-    Write-Host "`n[2/2] Driver installati:" -ForegroundColor Cyan
-    Get-PnpDevice | Where-Object {$_.Status -eq 'OK'} | Select-Object Name, InstanceId | Out-String
+    Write-Host "`n[2/2] Apertura Windows Update..." -ForegroundColor Cyan
+    Start-Process "ms-settings:windowsupdate-action"
+    Write-Host "  ✓ Apri Impostazioni > Aggiornamenti Windows" -ForegroundColor Green
+    Write-Host "  ✓ Clicca 'Ricerca aggiornamenti'" -ForegroundColor Green
     
     Write-Host "`n========================================" -ForegroundColor Green
     Write-Host "Ricerca completata!" -ForegroundColor Green
-    Write-Host "Controlla Windows Update per installare" -ForegroundColor Yellow
+    Write-Host "Installa gli aggiornamenti da Windows Update" -ForegroundColor Yellow
     Write-Host "========================================" -ForegroundColor Green
 }
 catch {
     Write-Host "Errore: $_" -ForegroundColor Red
+    Write-Host "Apri manualmente: Impostazioni > Aggiornamenti Windows" -ForegroundColor Yellow
 }
