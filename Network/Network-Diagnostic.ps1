@@ -1,24 +1,24 @@
 # ========================================
-# CFVA Network Diagnostic v3.1 - Completo
+# CFVA Network Diagnostic v3.2 - Completo
 # Author: Ivano Frau
-# Version: 3.1 - iperf verso NAS locali
+# Version: 3.2 - iperf verso NAS IP specifici
 # ========================================
 
 $sedi = @(
-    @{Nome="Ales"; IP="10.128.29.1"; HasNAS=$true},
-    @{Nome="Bosa"; IP="10.163.60.1"; HasNAS=$true},
-    @{Nome="Cuglieri"; IP="10.128.39.1"; HasNAS=$true},
-    @{Nome="Ghilarza"; IP="10.128.90.1"; HasNAS=$true},
-    @{Nome="Marrubiu"; IP="10.128.21.1"; HasNAS=$true},
-    @{Nome="Neoneli"; IP="10.128.19.1"; HasNAS=$true},
-    @{Nome="Samugheo"; IP="10.128.33.1"; HasNAS=$true},
-    @{Nome="Seneghe"; IP="10.128.35.1"; HasNAS=$true},
-    @{Nome="Villaurbana"; IP="10.128.37.1"; HasNAS=$true},
-    @{Nome="Fenosu"; IP="10.128.15.1"; HasNAS=$false},
-    @{Nome="Santa Maria"; IP="10.160.13.1"; HasNAS=$false},
-    @{Nome="BLON"; IP="10.128.41.1"; HasNAS=$true},
-    @{Nome="STIR"; IP="10.128.9.1"; HasNAS=$false},
-    @{Nome="Cualbu"; IP="10.128.25.1"; HasNAS=$true}
+    @{Nome="Ales"; IP="10.128.29.1"; NAS_IP="10.128.29.200"; HasNAS=$true},
+    @{Nome="Bosa"; IP="10.163.60.1"; NAS_IP="10.163.60.200"; HasNAS=$true},
+    @{Nome="Cuglieri"; IP="10.128.39.1"; NAS_IP="10.128.39.200"; HasNAS=$true},
+    @{Nome="Ghilarza"; IP="10.128.90.1"; NAS_IP="10.128.90.200"; HasNAS=$true},
+    @{Nome="Marrubiu"; IP="10.128.21.1"; NAS_IP="10.128.21.200"; HasNAS=$true},
+    @{Nome="Neoneli"; IP="10.128.19.1"; NAS_IP="10.128.19.200"; HasNAS=$true},
+    @{Nome="Samugheo"; IP="10.128.33.1"; NAS_IP="10.128.33.200"; HasNAS=$true},
+    @{Nome="Seneghe"; IP="10.128.35.1"; NAS_IP="10.128.35.200"; HasNAS=$true},
+    @{Nome="Villaurbana"; IP="10.128.37.1"; NAS_IP="10.128.37.200"; HasNAS=$true},
+    @{Nome="Fenosu"; IP="10.128.15.1"; NAS_IP=$null; HasNAS=$false},
+    @{Nome="Santa Maria"; IP="10.160.13.1"; NAS_IP=$null; HasNAS=$false},
+    @{Nome="BLON"; IP="10.128.41.1"; NAS_IP="10.128.41.200"; HasNAS=$true},
+    @{Nome="STIR"; IP="10.128.9.1"; NAS_IP=$null; HasNAS=$false},
+    @{Nome="Cualbu"; IP="10.128.25.1"; NAS_IP="10.128.25.24"; HasNAS=$true}
 )
 
 $iperf_port = 5201
@@ -29,7 +29,7 @@ $online = 0
 $tableRows = ""
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "CFVA Network Diagnostic v3.1" -ForegroundColor Cyan
+Write-Host "CFVA Network Diagnostic v3.2" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -43,6 +43,7 @@ if ($iperf_available) {
 
 Write-Host ""
 Write-Host "NAS con iperf su 11 sedi (escluse: Santa Maria, Fenosu, STIR)" -ForegroundColor Cyan
+Write-Host "IP NAS: .200 (tranne Cualbu che usa .24)" -ForegroundColor Cyan
 Write-Host "Test Ping + Latenza + Bandwidth..." -ForegroundColor Yellow
 Write-Host ""
 
@@ -53,7 +54,7 @@ foreach ($sede in $sedi) {
     
     Write-Host "[$percent%] Testando $($sede.Nome)..." -ForegroundColor Cyan
     
-    # PING TEST
+    # PING TEST (verso gateway)
     $ping = Test-Connection -ComputerName $sede.IP -Count 1 -ErrorAction SilentlyContinue
     if ($ping) {
         $status = "ONLINE"
@@ -66,14 +67,14 @@ foreach ($sede in $sedi) {
         $statusClass = "offline"
     }
     
-    # IPERF TEST (solo se sito ha NAS e è online)
+    # IPERF TEST (verso NAS IP specifico, solo se ha NAS e è online)
     $bandwidth = "N/A"
     $bandwidthClass = "neutral"
     
     if ($status -eq "ONLINE" -and $sede.HasNAS -and $iperf_available) {
         try {
-            Write-Host "    -> Testing iperf verso NAS locale..." -ForegroundColor Gray
-            $output = & $iperf3_path -c $sede.IP -p $iperf_port -t 5 -J 2>$null
+            Write-Host "    -> Testing iperf verso NAS $($sede.NAS_IP)..." -ForegroundColor Gray
+            $output = & $iperf3_path -c $sede.NAS_IP -p $iperf_port -t 5 -J 2>$null
             $iperf = $output | ConvertFrom-Json
             $bits_sec = $iperf.end.sum_received.bits_per_second
             $mbps = [math]::Round($bits_sec / 1000000, 2)
@@ -164,11 +165,12 @@ $html = @"
         
         .server-info {
             background: #f0f0f0;
-            padding: 10px;
+            padding: 15px;
             border-radius: 4px;
             margin-top: 10px;
             font-size: 12px;
             color: #666;
+            line-height: 1.6;
         }
         
         .dashboard {
@@ -290,9 +292,20 @@ $html = @"
             margin-top: 30px;
         }
         
+        .legend-section {
+            margin-bottom: 20px;
+        }
+        
+        .legend-section strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
         .legend-item {
             margin: 8px 0;
             font-size: 13px;
+            margin-left: 15px;
         }
         
         .legend-item span {
@@ -332,13 +345,14 @@ $html = @"
 <body>
     <div class="container">
         <header>
-            <h1>CFVA Network Diagnostic Report v3.1</h1>
+            <h1>CFVA Network Diagnostic Report v3.2</h1>
             <p class="timestamp">Generato: $timestamp</p>
             <div class="server-info">
-                <strong>Test iperf:</strong> Verso NAS locali su 11 sedi (gateway IP)<br>
+                <strong>Test iperf:</strong> Verso NAS IP specifici su 11 sedi<br>
+                <strong>IP NAS:</strong> x.x.x.200 (standard), x.x.25.24 per Cualbu<br>
                 <strong>Sedi senza NAS:</strong> Santa Maria, Fenosu, STIR<br>
                 <strong>Test duration:</strong> 5 secondi per sede<br>
-                <strong>Protocollo:</strong> TCP
+                <strong>Protocollo:</strong> TCP / iperf3
             </div>
         </header>
         
@@ -353,7 +367,7 @@ $html = @"
             </div>
         </div>
         
-        <h2>Stato Sedi (Ping + Bandwidth verso NAS locali)</h2>
+        <h2>Stato Sedi (Ping + Bandwidth verso NAS)</h2>
         <table>
             <tr>
                 <th>Sede</th>
@@ -385,22 +399,20 @@ $html = @"
         </table>
         
         <div class="legend">
-            <h3 style="margin-bottom: 15px; color: #333;">Legenda</h3>
-            
-            <div style="margin-bottom: 15px;">
-                <strong>Latenza:</strong>
+            <div class="legend-section">
+                <strong>Latenza (verso gateway):</strong>
                 <div class="legend-item"><span class="latency-good">BUONA</span> &lt; 50 ms (locale/veloce)</div>
                 <div class="legend-item"><span class="latency-warning">MEDIA</span> 50-150 ms (accettabile)</div>
                 <div class="legend-item"><span class="latency-bad">ALTA</span> &gt; 150 ms (VPN/lenta)</div>
             </div>
             
-            <div>
-                <strong>Bandwidth (verso NAS locale):</strong>
+            <div class="legend-section">
+                <strong>Bandwidth (verso NAS):</strong>
                 <div class="legend-item"><span class="bandwidth-good">BUONO</span> &gt; 100 Mbps (eccellente)</div>
                 <div class="legend-item"><span class="bandwidth-warning">MEDIO</span> 10-100 Mbps (accettabile)</div>
                 <div class="legend-item"><span class="bandwidth-bad">CATTIVO</span> &lt; 10 Mbps (collo di bottiglia)</div>
                 <div class="legend-item"><span class="bandwidth-neutral">Senza NAS</span> Sede sprovvista di NAS locale</div>
-                <div class="legend-item"><span class="bandwidth-neutral">Offline</span> Test non eseguito</div>
+                <div class="legend-item"><span class="bandwidth-neutral">Offline</span> Sede non raggiungibile</div>
             </div>
         </div>
         
