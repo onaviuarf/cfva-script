@@ -60,7 +60,7 @@ $html = @"
 </head>
 <body>
     <div class="container">
-        <h1>🌐 CFVA Network Diagnostic Report</h1>
+        <h1>CFVA Network Diagnostic Report</h1>
         <p>Generato: $(Get-Date -Format 'dd/MM/yyyy HH:mm:ss')</p>
         
         <div class="dashboard">
@@ -75,7 +75,7 @@ $html = @"
             </div>
         </div>
         
-        <h2>📍 Stato Sedi</h2>
+        <h2>Stato Sedi</h2>
         <table>
             <tr>
                 <th>Sede</th>
@@ -86,11 +86,11 @@ $html = @"
             $tableRows
         </table>
         
-        <h2>🔐 Domain Controllers</h2>
+        <h2>Domain Controllers</h2>
         <table>
             <tr><th>Server</th><th>IP</th><th>Status</th></tr>
-            <tr><td>DC Primario</td><td>192.168.224.114</td><td class="online">✓ ONLINE</td></tr>
-            <tr><td>DC Secondario</td><td>192.168.224.115</td><td class="online">✓ ONLINE</td></tr>
+            <tr><td>DC Primario</td><td>192.168.224.114</td><td class="online">ONLINE</td></tr>
+            <tr><td>DC Secondario</td><td>192.168.224.115</td><td class="online">ONLINE</td></tr>
         </table>
         
         <footer style="margin-top: 30px; text-align: center; color: #999; border-top: 1px solid #eee; padding-top: 20px;">
@@ -103,3 +103,4 @@ $html = @"
 
 $html | Out-File -FilePath $logFile -Encoding UTF8
 Start-Process $logFile
+Write-Host "Report generato: $logFile"
